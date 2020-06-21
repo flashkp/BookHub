@@ -34,7 +34,7 @@ class DashboardRecyclerAdaptor(val context : Context, val itemList :ArrayList<St
         holder.textView.text = text
     }
     class DashboardViewHolder(view: View) : RecyclerView.ViewHolder(view){
-        val textView : TextView = view.findViewById(R.id.rowItem)
+        val textView : TextView = view.findViewById(R.id.txtBookName)
 
     }
 }

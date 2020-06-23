@@ -1,22 +1,26 @@
 package com.example.bookhub.fragment
 
+import android.app.AlertDialog
 import android.content.Context
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bookhub.R
 import com.example.bookhub.adaptor.DashboardRecyclerAdaptor
 import com.example.bookhub.model.Book
+import com.example.bookhub.util.ConnectionManager
 
 class DashboardFragment : Fragment() {
 
     lateinit var recyclerView: RecyclerView
     lateinit var layoutManager : RecyclerView.LayoutManager
+    lateinit var btnCheck : Button
     val booklist = arrayListOf(
         "P.S. I Love You",
         "The Great Gatsby",
@@ -54,6 +58,30 @@ class DashboardFragment : Fragment() {
 
         val view = inflater.inflate(R.layout.fragment_dashboard, container, false)
         recyclerView = view.findViewById(R.id.recycle)
+        btnCheck =view.findViewById(R.id.btnCheck)
+        btnCheck.setOnClickListener{
+            if (ConnectionManager().checkConnectivity(activity as Context)){
+                val dialog = AlertDialog.Builder(activity as Context)
+                dialog.setTitle("Success")
+                dialog.setMessage("Internet Connection Found")
+                dialog.setPositiveButton("Ok"){text,listener ->
+
+                }
+                dialog.create()
+                dialog.show()
+            }
+            else{
+                val dialog = AlertDialog.Builder(activity as Context)
+                dialog.setTitle("Error")
+                dialog.setMessage("Internet Connection not Found")
+                dialog.setPositiveButton("Ok"){text,listener ->
+
+                }
+                dialog.create()
+                dialog.show()
+
+            }
+        }
         layoutManager = LinearLayoutManager(activity)
         recyclerAdapter = DashboardRecyclerAdaptor(activity as Context, bookInfoList)
         recyclerView.adapter = recyclerAdapter

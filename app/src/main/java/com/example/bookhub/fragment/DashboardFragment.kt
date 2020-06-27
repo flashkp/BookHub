@@ -1,6 +1,7 @@
 package com.example.bookhub.fragment
 
 import android.app.AlertDialog
+import android.app.DownloadManager
 import android.content.Context
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -11,6 +12,11 @@ import android.widget.Button
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.android.volley.Header
+import com.android.volley.Request
+import com.android.volley.Response
+import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.toolbox.Volley
 import com.example.bookhub.R
 import com.example.bookhub.adaptor.DashboardRecyclerAdaptor
 import com.example.bookhub.model.Book
@@ -19,8 +25,8 @@ import com.example.bookhub.util.ConnectionManager
 class DashboardFragment : Fragment() {
 
     lateinit var recyclerView: RecyclerView
-    lateinit var layoutManager : RecyclerView.LayoutManager
-    lateinit var btnCheck : Button
+    lateinit var layoutManager: RecyclerView.LayoutManager
+    lateinit var btnCheck: Button
     val booklist = arrayListOf(
         "P.S. I Love You",
         "The Great Gatsby",
@@ -44,7 +50,13 @@ class DashboardFragment : Fragment() {
         Book("War and Peace", "Leo Tolstoy", "Rs. 249", "4.8", R.drawable.war_and_peace),
         Book("Lolita", "Vladimir Nabokov", "Rs. 349", "3.9", R.drawable.lolita),
         Book("Middlemarch", "George Eliot", "Rs. 599", "4.2", R.drawable.middlemarch),
-        Book("The Adventures of Huckleberry Finn", "Mark Twain", "Rs. 699", "4.5", R.drawable.adventures_finn),
+        Book(
+            "The Adventures of Huckleberry Finn",
+            "Mark Twain",
+            "Rs. 699",
+            "4.5",
+            R.drawable.adventures_finn
+        ),
         Book("Moby-Dick", "Herman Melville", "Rs. 499", "4.5", R.drawable.moby_dick),
         Book("The Lord of the Rings", "J.R.R Tolkien", "Rs. 749", "5.0", R.drawable.lord_of_rings)
     )
@@ -58,23 +70,22 @@ class DashboardFragment : Fragment() {
 
         val view = inflater.inflate(R.layout.fragment_dashboard, container, false)
         recyclerView = view.findViewById(R.id.recycle)
-        btnCheck =view.findViewById(R.id.btnCheck)
-        btnCheck.setOnClickListener{
-            if (ConnectionManager().checkConnectivity(activity as Context)){
+        btnCheck = view.findViewById(R.id.btnCheck)
+        btnCheck.setOnClickListener {
+            if (ConnectionManager().checkConnectivity(activity as Context)) {
                 val dialog = AlertDialog.Builder(activity as Context)
                 dialog.setTitle("Success")
                 dialog.setMessage("Internet Connection Found")
-                dialog.setPositiveButton("Ok"){text,listener ->
+                dialog.setPositiveButton("Ok") { text, listener ->
 
                 }
                 dialog.create()
                 dialog.show()
-            }
-            else{
+            } else {
                 val dialog = AlertDialog.Builder(activity as Context)
                 dialog.setTitle("Error")
                 dialog.setMessage("Internet Connection not Found")
-                dialog.setPositiveButton("Ok"){text,listener ->
+                dialog.setPositiveButton("Ok") { text, listener ->
 
                 }
                 dialog.create()
@@ -86,14 +97,34 @@ class DashboardFragment : Fragment() {
         recyclerAdapter = DashboardRecyclerAdaptor(activity as Context, bookInfoList)
         recyclerView.adapter = recyclerAdapter
         recyclerView.layoutManager = layoutManager
-         recyclerView.addItemDecoration(
-             DividerItemDecoration(
-                 recyclerView.context,
-                 (layoutManager as LinearLayoutManager).orientation
+        recyclerView.addItemDecoration(
+            DividerItemDecoration(
+                recyclerView.context,
+                (layoutManager as LinearLayoutManager).orientation
 
-             )
-         )
+            )
+        )
+        val queue = Volley.newRequestQueue(activity as Context)
+        val url = "http://13.235.250.119/v1/book/fetch_books/"
+        val jsonObjectRequest = object :
+            JsonObjectRequest(Request.Method.GET, url, null, Response.Listener {
+                println("Response is $it ")
+
+            }, Response.ErrorListener {
+                println("Error is $it")
+
+            }
+            ) {
+            override fun getHeaders(): MutableMap<String, String> {
+                val headers = HashMap<String, String>()
+                headers["Content-type"] = "application/json"
+                headers["token"] = "4dabd3b987382b"
+                return headers
+            }
+
+        }
+        queue.add(jsonObjectRequest)
         return view
     }
-
 }
+

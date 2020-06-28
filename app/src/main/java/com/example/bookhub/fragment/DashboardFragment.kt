@@ -1,18 +1,16 @@
 package com.example.bookhub.fragment
 
 import android.app.AlertDialog
-import android.app.DownloadManager
 import android.content.Context
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.android.volley.Header
 import com.android.volley.Request
 import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
@@ -104,7 +102,8 @@ class DashboardFragment : Fragment() {
 
             )
         )
-        val queue = Volley.newRequestQueue(activity as Context)
+        val queue = Volley.newRequestQueue(activity as Context
+        )
         val url = "http://13.235.250.119/v1/book/fetch_books/"
         val jsonObjectRequest = object :
             JsonObjectRequest(Request.Method.GET, url, null, Response.Listener {
@@ -118,7 +117,7 @@ class DashboardFragment : Fragment() {
             override fun getHeaders(): MutableMap<String, String> {
                 val headers = HashMap<String, String>()
                 headers["Content-type"] = "application/json"
-                headers["token"] = "4dabd3b987382b"
+                headers["token"] = "ed0e68368529be"
                 return headers
             }
 

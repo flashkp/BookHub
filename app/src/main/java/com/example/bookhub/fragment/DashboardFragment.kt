@@ -1,12 +1,17 @@
 package com.example.bookhub.fragment
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.Toast
+import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -25,22 +30,10 @@ class DashboardFragment : Fragment() {
     lateinit var recyclerView: RecyclerView
     lateinit var layoutManager: RecyclerView.LayoutManager
     lateinit var btnCheck: Button
-    val booklist = arrayListOf(
-        "P.S. I Love You",
-        "The Great Gatsby",
-        "Anna Karenina",
-        "Madame Bovary",
-        "War and Peace",
-        "Lolita",
-        "Middlemarch",
-        "The Adventures of Huckleberry Finn",
-        "Moby-dick",
-        "Lords of the Rings"
-
-    )
-
     lateinit var recyclerAdapter: DashboardRecyclerAdaptor
-    val bookInfoList = arrayListOf<Book>(
+    var bookInfoList = arrayListOf<Book>()
+
+    /*val bookInfoList = arrayListOf<Book>(
         Book("P.S. I love You", "Cecelia Ahern", "Rs. 299", "4.5", R.drawable.ps_ily),
         Book("The Great Gatsby", "F. Scott Fitzgerald", "Rs. 399", "4.1", R.drawable.great_gatsby),
         Book("Anna Karenina", "Leo Tolstoy", "Rs. 199", "4.3", R.drawable.anna_kare),
@@ -57,7 +50,7 @@ class DashboardFragment : Fragment() {
         ),
         Book("Moby-Dick", "Herman Melville", "Rs. 499", "4.5", R.drawable.moby_dick),
         Book("The Lord of the Rings", "J.R.R Tolkien", "Rs. 749", "5.0", R.drawable.lord_of_rings)
-    )
+    )*/
 
 
     override fun onCreateView(
@@ -91,38 +84,75 @@ class DashboardFragment : Fragment() {
 
             }
         }
-        layoutManager = LinearLayoutManager(activity)
-        recyclerAdapter = DashboardRecyclerAdaptor(activity as Context, bookInfoList)
-        recyclerView.adapter = recyclerAdapter
-        recyclerView.layoutManager = layoutManager
-        recyclerView.addItemDecoration(
-            DividerItemDecoration(
-                recyclerView.context,
-                (layoutManager as LinearLayoutManager).orientation
 
-            )
-        )
+        layoutManager = LinearLayoutManager(activity)
+
         val queue = Volley.newRequestQueue(activity as Context
         )
         val url = "http://13.235.250.119/v1/book/fetch_books/"
-        val jsonObjectRequest = object :
-            JsonObjectRequest(Request.Method.GET, url, null, Response.Listener {
-                println("Response is $it ")
+        if (ConnectionManager().checkConnectivity(activity as Context)){
+            val jsonObjectRequest = object :
+                JsonObjectRequest(Request.Method.GET, url, null, Response.Listener{
+                    val success = it.getBoolean("success")
+                    if (success){
+                        val data = it.getJSONArray("data")
+                        for(i in 0 until data.length()){
+                            val bookJsonObject = data.getJSONObject(i)
+                            val bookObject = Book(
+                                bookJsonObject.getString("book_id"),
+                                bookJsonObject.getString("name"),
+                                bookJsonObject.getString("author"),
+                                bookJsonObject.getString("rating"),
+                                bookJsonObject.getString("price"),
+                                bookJsonObject.getString("image")
+                            )
+                            bookInfoList.add(bookObject)
+                            recyclerAdapter = DashboardRecyclerAdaptor(activity as Context, bookInfoList)
+                            recyclerView.adapter = recyclerAdapter
+                            recyclerView.layoutManager = layoutManager
+                            recyclerView.addItemDecoration(
+                                DividerItemDecoration(
+                                    recyclerView.context,
+                                    (layoutManager as LinearLayoutManager).orientation
 
-            }, Response.ErrorListener {
-                println("Error is $it")
+                                )
+                            )
+                        }
+
+                    }else(
+                            Toast.makeText(activity as Context,"Some Error occurred!!",Toast.LENGTH_SHORT).show()
+                            )
+
+                }, Response.ErrorListener {
+                    println("Error is $it")
+
+                }) {
+                override fun getHeaders(): MutableMap<String, String> {
+                    val headers = HashMap<String, String>()
+                    headers["Content-type"] = "application/json"
+                    headers["token"] = "4dabd3b987382b"
+                    return headers
+                }
 
             }
-            ) {
-            override fun getHeaders(): MutableMap<String, String> {
-                val headers = HashMap<String, String>()
-                headers["Content-type"] = "application/json"
-                headers["token"] = "ed0e68368529be"
-                return headers
-            }
+            queue.add(jsonObjectRequest)
+        }else{
+            val dialog = AlertDialog.Builder(activity as Context)
+            dialog.setTitle("Error")
+            dialog.setMessage("Internet Connection not Found")
+            dialog.setPositiveButton("Open Settings") { text, listener ->
+                val settingIntent = Intent(Settings.ACTION_WIRELESS_SETTINGS)
+                startActivity(settingIntent)
+                activity?.finish()
 
+            }
+            dialog.setNegativeButton("Exit"){text,listener->
+                ActivityCompat.finishAffinity(activity as Activity)
+            }
+            dialog.create()
+            dialog.show()
         }
-        queue.add(jsonObjectRequest)
+
         return view
     }
 }

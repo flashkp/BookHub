@@ -6,9 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.RelativeLayout
@@ -47,7 +45,7 @@ class DashboardFragment : Fragment() {
 
         val view = inflater.inflate(R.layout.fragment_dashboard, container, false)
         recyclerView = view.findViewById(R.id.recycle)
-
+        setHasOptionsMenu(true)
         progressLayout = view.findViewById(R.id.progressLayout)
         progressBar = view.findViewById(R.id.progressBar)
         progressLayout.visibility= View.VISIBLE
@@ -97,7 +95,13 @@ class DashboardFragment : Fragment() {
 
 
                 }, Response.ErrorListener {
-                    Toast.makeText(activity as Context,"Volley error Occured",Toast.LENGTH_SHORT).show()
+                    if (activity != null) {
+                        Toast.makeText(
+                            activity as Context,
+                            "Volley error Occured",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
 
                 }) {
                 override fun getHeaders(): MutableMap<String, String> {
@@ -127,6 +131,10 @@ class DashboardFragment : Fragment() {
         }
 
         return view
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater?.inflate(R.menu.menu_dashboard,menu)
     }
 }
 

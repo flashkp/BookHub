@@ -4,17 +4,22 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.os.AsyncTask
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
 import android.widget.*
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.room.Room
 import com.android.volley.Request
 import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
 import com.example.bookhub.R
+import com.example.bookhub.database.BookDatabase
+import com.example.bookhub.database.BookEntity
 import com.example.bookhub.model.Book
 import com.example.bookhub.util.ConnectionManager
 import com.squareup.picasso.Picasso
@@ -79,7 +84,7 @@ class DescriptionActivity : AppCompatActivity() {
                     progressLayout.visibility = View.GONE
                     if (success) {
                         val bookJsonObject = it.getJSONObject("book_data")
-
+                        val bookImageUrl=bookJsonObject.getString("image")
                         Picasso.get().load(bookJsonObject.getString("image")).error(R.drawable.default_book_cover).into(
                             imgBookImage)
                         txtBookName.text = bookJsonObject.getString("name")
@@ -87,6 +92,58 @@ class DescriptionActivity : AppCompatActivity() {
                         txtBookPrice.text = bookJsonObject.getString("price")
                         txtBookRating.text = bookJsonObject.getString("rating")
                         txtBookDesc.text = bookJsonObject.getString("description")
+                        val bookEntity = BookEntity(
+                            bookId?.toInt() as Int,
+                            txtBookName.text.toString(),
+                            txtBookAuthor.text.toString(),
+                            txtBookPrice.text.toString(),
+                            txtBookRating.text.toString(),
+                            txtBookDesc.text.toString(),
+                            bookImageUrl
+                        )
+                        val checkFav = DBAsyncTask(applicationContext,bookEntity,1).execute()
+                        val isFav = checkFav.get()
+                        if (isFav){
+                            btnAddToFav.text = "Remove from Favourites"
+                            val favColor = ContextCompat.getColor(applicationContext,R.color.colorFavourite)
+                            btnAddToFav.setBackgroundColor(favColor)
+                        }else{
+                            btnAddToFav.text = "Add to Favourites"
+                            val nofavColor = ContextCompat.getColor(applicationContext,R.color.colorPrimary)
+                            btnAddToFav.setBackgroundColor(nofavColor)
+                        }
+                        btnAddToFav.setOnClickListener{
+                            if (!DBAsyncTask(applicationContext,bookEntity,1).execute().get()){
+                                val async = DBAsyncTask(applicationContext,bookEntity,2).execute()
+                                val result=async.get()
+                                if(result){
+                                    Toast.makeText(this@DescriptionActivity,"Book added to Favourites",Toast.LENGTH_SHORT).show()
+                                    btnAddToFav.text = "Remove from Favourites"
+                                    val favColor = ContextCompat.getColor(applicationContext,R.color.colorFavourite)
+                                    btnAddToFav.setBackgroundColor(favColor)
+                                }else{
+                                    Toast.makeText(this@DescriptionActivity,"Some Error Occurred",Toast.LENGTH_SHORT).show()
+                                }
+                            }else{
+                                val async = DBAsyncTask(applicationContext,bookEntity,3).execute()
+                                val result=async.get()
+                                if(result) {
+                                    Toast.makeText(
+                                        this@DescriptionActivity,
+                                        "Book removed from Favourites",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    btnAddToFav.text = "Add to Favourites"
+                                    val nofavColor = ContextCompat.getColor(applicationContext,R.color.colorPrimary)
+                                    btnAddToFav.setBackgroundColor(nofavColor)
+
+                                }else{
+                                    Toast.makeText(this@DescriptionActivity,"Some Error Occurred",Toast.LENGTH_SHORT).show()
+                                }
+
+                            }
+                        }
+
                     }else {
                         Toast.makeText(
                             this@DescriptionActivity as Context,
@@ -127,6 +184,34 @@ class DescriptionActivity : AppCompatActivity() {
             }
 
 
+
+    }
+    class DBAsyncTask(val context: Context,val bookEntity: BookEntity,val mode:Int): AsyncTask<Void,Void,Boolean>(){
+        val db = Room.databaseBuilder(context,BookDatabase::class.java,"books-db").build()
+        override fun doInBackground(vararg params: Void?): Boolean {
+            when(mode){
+                1 ->{
+                    val book :BookEntity? = db.bookDao().getBookByID(bookEntity.book_Id.toString())
+                    db.close()
+                    return book!=null
+
+                }
+                2 ->{
+                    db.bookDao().insertBook(bookEntity)
+                    db.close()
+                    return true
+
+                }
+                3 ->{
+                    db.bookDao().deleteBook(bookEntity)
+                    db.close()
+                    return true
+
+                }
+            }
+
+            return false
+        }
 
     }
 
